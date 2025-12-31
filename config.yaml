@@ -1,0 +1,40 @@
+# Конфигурация raster-forge v0.1.0
+# Обновлено: 2025-12-31
+
+version: "1.0"
+
+# Настройки растеризации
+rasterization:
+  base_dpi: 300  # Базовое разрешение для финального PDF
+  
+  # Уровни пирамиды (в порядке убывания)
+  pyramid_levels:
+    - 300  # Максимальное качество для детального анализа
+    - 250  # Высокое качество с умеренной нагрузкой  
+    - 200  # Компромисс качество/скорость
+    - 150  # Стандартное качество для большинства задач
+    - 100  # Быстрая обработка
+    - 75   # Минимальное для layout analysis
+
+# Настройки выходных файлов
+output:
+  format: webp           # Формат для пирамиды (webp/png/jpg)
+  webp_quality: 90       # Качество WebP (1-100, где 100 = lossless)
+  pdf_compression: true  # Сжатие финального PDF
+  preserve_metadata: false  # Сохранять метаданные из исходных файлов
+
+# Настройки обработки
+processing:
+  parallel_pages: true    # Параллельная обработка страниц
+  max_goroutines: 0       # Максимум горутин (0 = auto = CPU cores)
+  memory_limit_mb: 2048   # Лимит памяти на документ
+  
+# Алгоритмы downsampling
+downsampling:
+  algorithm: lanczos3  # lanczos3/bicubic/bilinear/nearest
+
+# Логирование
+logging:
+  level: info  # debug/info/warn/error
+  format: text # text/json
+  output: stdout  # stdout/stderr или путь к файлу
