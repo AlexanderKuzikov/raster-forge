@@ -1,151 +1,107 @@
 # raster-forge
 
-Высокопроизводительный движок нормализации и растеризации документов с генерацией многоуровневой пирамиды разрешений для обработки VLM.
+[![Go Version](https://img.shields.io/badge/Go-1.26-00ADD8?logo=go&logoColor=white)](go.mod)
+[![CI](https://github.com/AlexanderKuzikov/raster-forge/actions/workflows/ci.yml/badge.svg)](https://github.com/AlexanderKuzikov/raster-forge/actions/workflows/ci.yml)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue)](LICENSE)
+[![Status](https://img.shields.io/badge/Status-Architecture%20Skeleton-yellow)](CONTEXT.md)
 
-## Обзор
+**v0.1.0** — архитектурный каркас. Pipeline в разработке. [→ CONTEXT.md](CONTEXT.md) · [→ SRS.md](SRS.md)
 
-**raster-forge** преобразует разнородные документы (PDF, изображения, смешанные форматы) в унифицированные растрированные выходные данные с многомасштабными представлениями, оптимизированными для Vision Language Model (VLM) inference.
+Высокопроизводительный движок нормализации и растеризации документов с генерацией многоуровневой пирамиды разрешений для VLM-инференса.
 
-## Возможности
+Принимает PDF, PNG, JPG → растеризует → строит каскад DPI (300→75) → кодирует WebP.
 
-- **Универсальная поддержка входных форматов**: Обработка одно/многостраничных PDF, изображений (PNG, JPG) и смешанных папок с документами
-- **Унифицированный выход**: Создание чистых растрированных PDF со встроенными изображениями (без текстовых слоёв)
-- **Многоуровневая пирамида разрешений**: Создание каскадных downsampled версий (75/100/150/200/250/300 DPI) для экспериментов с VLM
-- **Оптимизация WebP**: Быстрое кодирование с превосходной компрессией для хранения пирамиды
-- **Гибкая конфигурация**: YAML-конфигурация с настройкой всех параметров обработки
-- **Параллельная обработка**: Конкурентная обработка документов и страниц на основе горутин
-- **Неизменность входных данных**: Исходные файлы остаются нетронутыми; все выходные данные в отдельной структуре каталогов
+---
+
+## Мотивация
+
+VLM-модели (DocuMind, Luminar) работают с изображениями, а не с PDF. raster-forge:
+1. Растеризует PDF/изображения в чистые grayscale-страницы
+2. Строит пирамиду разрешений (75–300 DPI)
+3. Позволяет VLM выбирать уровень: 75 DPI для layout analysis, 300 DPI для детального OCR
+
+---
 
 ## Быстрый старт
 
-### Установка
-
 ```bash
-go install github.com/AlexanderKuzikov/raster-forge@latest
+go build -o raster-forge .
+./raster-forge -input ./testdata -output ./out
 ```
-
-### Использование
-
-```bash
-# Базовое использование с конфигурацией по умолчанию
-raster-forge -input ./documents -output ./processed
-
-# С пользовательской конфигурацией
-raster-forge -input ./documents -config custom-config.yaml
-
-# Просмотр версии
-raster-forge -version
-```
-
-### Конфигурация
-
-Создайте файл `config.yaml`:
-
-```yaml
-version: "1.0"
-
-rasterization:
-  base_dpi: 300
-  pyramid_levels: [75, 100, 150, 200, 250, 300]
-
-output:
-  format: "webp"
-  webp_quality: 85
-  pdf_compression: true
-
-processing:
-  parallel_pages: true
-  max_goroutines: 8
-  memory_limit_mb: 4096
-
-downsampling:
-  algorithm: "lanczos"
-```
-
-## Архитектура
-
-### Структура входных данных
-
-```
-input/
-├── document1.pdf       # Отдельный PDF (одно- или многостраничный)
-├── document2.pdf
-├── document3/          # Многофайловый документ
-│   ├── page1.pdf
-│   ├── page2.pdf
-│   └── page3.jpg
-└── document4/          # Документ только из изображений
-    ├── scan1.png
-    └── scan2.png
-```
-
-### Структура выходных данных
-
-```
-output_YYYYMMDD_HHMMSS/
-├── pdfs/
-│   ├── document1.pdf   # Растрирован @ 300 DPI
-│   ├── document2.pdf
-│   ├── document3.pdf
-│   └── document4.pdf
-└── pyramid/
-    ├── document1/
-    │   ├── 75dpi/
-    │   │   ├── page1.webp
-    │   │   └── page2.webp
-    │   ├── 100dpi/
-    │   │   ├── page1.webp
-    │   │   └── page2.webp
-    │   ├── 150dpi/
-    │   ├── 200dpi/
-    │   ├── 250dpi/
-    │   └── 300dpi/
-    │       ├── page1.webp
-    │       └── page2.webp
-    ├── document2/
-    │   └── ...
-    └── document3/
-        └── ...
-```
-
-### Конвейер обработки
-
-1. **Сканирование входных данных**: Идентификация документов (файлов или папок)
-2. **Нормализация**: Объединение многофайловых документов, обработка смешанных форматов
-3. **Растеризация**: Преобразование всех страниц в изображения 300 DPI
-4. **Сборка PDF**: Создание унифицированного PDF из растрированных страниц
-5. **Генерация пирамиды**: Каскадный downsample: 300 → 250 → 200 → 150 → 100 → 75 DPI
-6. **Кодирование WebP**: Сохранение уровней пирамиды с оптимизированной компрессией
-
-## Технические детали
-
-### Зависимости
-
-- `gopkg.in/yaml.v3` - парсинг YAML конфигурации
-- Планируются: библиотеки для обработки PDF и изображений
 
 ### Требования
 
-- Go 1.21+
-- Достаточно памяти для обработки высокого разрешения (рекомендуется 8GB+)
+- Go 1.24+ (toolchain go1.26.0, автоматически подтянет нужную версию)
+- (Опционально) `cwebp` из libwebp для WebP-кодирования
+
+### Флаги
+
+| Флаг | Назначение |
+|---|---|
+| `-input <path>` | Входная директория (обязательный) |
+| `-output <path>` | Выходная директория (по умолч. `output_YYYYMMDD_HHMMSS`) |
+| `-config <path>` | Путь к YAML-конфигу (по умолч. `config.yaml`) |
+| `-version` | Показать версию |
+| `-json` | Вывести JSON-отчёт на stdout для интеграции |
+
+---
+
+## Архитектура
+
+```
+input/ → discovery → normalize → rasterize → pyramid → webp → output/
+```
+
+Подробнее: [SRS.md](SRS.md).
+
+---
+
+## Текущее состояние
+
+| Компонент | Статус |
+|---|---|
+| CLI (флаги, config, -help, -json) | ✅ Работает |
+| Config (YAML, валидация, дефолты) | ✅ Работает |
+| Graceful shutdown (SIGINT/SIGTERM) | ✅ Работает |
+| Smoke-тесты (6 тестов) | ✅ Работает |
+| CI (GitHub Actions, 3 OS × 2 Go) | ✅ Работает |
+| Документация (CONTEXT, SRS, DECISIONS, CODE_REVIEW) | ✅ Готова |
+| Discovery (сканирование) | 🔄 В разработке |
+| Normalize (нормализация) | 🔄 В разработке |
+| Rasterize (PDF → image) | 🔄 В разработке |
+| Pyramid (downsample) | 🔄 В разработке |
+| WebP encoding | 🔄 В разработке |
+| JSON-режим (вывод отчёта) | 🔄 В разработке |
+
+---
+
+## Документация
+
+- [CONTEXT.md](CONTEXT.md) — актуальный статус, карта кода, backlog
+- [CODE_REVIEW.md](CODE_REVIEW.md) — Code Review #1 (2026-07-16)
+- [SRS.md](SRS.md) — Software Requirements Specification
+- [DECISIONS.md](DECISIONS.md) — Архитектурные решения
+- `config.yaml` — Конфигурация по умолчанию
+
+---
 
 ## Roadmap
 
-- [ ] Реализация растеризации PDF
-- [ ] Интеграция обработки изображений
-- [ ] Генерация пирамиды разрешений
-- [ ] WebP кодирование
-- [ ] Параллельная обработка документов
-- [ ] Прогресс-индикация
-- [ ] Логирование с уровнями детализации
-- [ ] Поддержка дополнительных форматов (TIFF, BMP)
-- [ ] Метаданные документов
-- [ ] Валидация выходных данных
+- [ ] **P0:** Minimal pipeline: PNG → resize → WebP
+- [ ] **P0:** JSON-режим для DocuMind
+- [ ] **P1:** PDF-поддержка (pdfcpu)
+- [ ] **P1:** Пирамида разрешений
+- [x] **P2:** CI (GitHub Actions)
+- [x] **P1:** Graceful shutdown
+- [ ] **P2:** Параллельная обработка
+- [ ] **P2:** Тесты (smoke, unit)
+
+---
 
 ## Лицензия
 
-Apache License 2.0 - см. [LICENSE](LICENSE)
+Apache License 2.0 — см. [LICENSE](LICENSE).
 
 ## Автор
 
-Alexander Kuzikov
+Alexander Kuzikov · [GitHub](https://github.com/AlexanderKuzikov)
