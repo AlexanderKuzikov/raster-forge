@@ -159,6 +159,7 @@
 | 2026-07-16 | — | feat: graceful shutdown, -help флаг, -json флаг, loadConfigSafe |
 | 2026-07-16 | — | test: main_test.go (6 smoke-тестов) |
 | 2026-07-16 | — | infra: .gitignore, .env.example, .github/workflows/ci.yml |
+| 2026-07-16 | — | fix(ci): убран toolchain go1.26.0 из go.mod; CI сужен до 2 OS + 1.25 bionic; тесты переписаны без subprocess go build |
 
 ## Старт следующей сессии
 
